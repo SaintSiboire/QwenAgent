@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="QwenAgent.Cli/QwenAgent.Cli.csproj" />
+  <Project Path="QwenAgent.Core/QwenAgent.Core.csproj" />
+</Solution>
