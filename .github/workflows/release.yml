@@ -24,6 +24,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ steps.version.outputs.version }}
           tag_prefix: ""
+          commit_sha: ${{ github.sha }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
