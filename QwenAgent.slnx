@@ -4,8 +4,10 @@
     <File Path="installer/install.ps1" />
     <File Path="installer/uninstall.ps1" />
     <File Path="installer/update.ps1" />
+    <File Path="QwenAgent.Updater.exe" />
     <File Path="README.md" />
   </Folder>
   <Project Path="QwenAgent.Cli/QwenAgent.Cli.csproj" />
   <Project Path="QwenAgent.Core/QwenAgent.Core.csproj" />
+  <Project Path="QwenAgent.Updater/QwenAgent.Updater.csproj" Id="8f8aa1ff-17d7-43e7-86b3-c7c6b4d53588" />
 </Solution>

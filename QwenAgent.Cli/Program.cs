@@ -22,9 +22,15 @@ if (prompt == "help" || prompt == "--help" || prompt == "-h")
 if (prompt == "--update")
 {
     var installPath = AppContext.BaseDirectory;
-    await Updater.RunUpdateAsync(installPath);
-    return;
+    var updaterExe = Path.Combine(installPath, "QwenAgent.Updater.exe");
+
+    Console.WriteLine("Lancement de l'updater externe...");
+
+    System.Diagnostics.Process.Start(updaterExe, $"\"{installPath}\"");
+
+    Environment.Exit(0);
 }
+
 
 // Détection automatique du mode
 var modeName = ModeDetector.Detect(prompt);
