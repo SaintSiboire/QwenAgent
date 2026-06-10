@@ -42,3 +42,6 @@ jobs:
           tag_name: ${{ steps.version.outputs.version }}
           name: "QwenAgent ${{ steps.version.outputs.version }}"
           files: QwenAgent.zip
+          prerelease: false
+          draft: false
+
