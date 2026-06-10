@@ -5,6 +5,11 @@ param(
 # Forcer TLS 1.2 pour GitHub
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+# User-Agent obligatoire pour GitHub API
+$headers = @{
+    "User-Agent" = "QwenAgentInstaller"
+}
+
 Write-Host "Installation de QwenAgent..."
 
 # 1. Demander le dossier si non fourni
@@ -25,7 +30,7 @@ Write-Host "Téléchargement de la dernière version..."
 
 try {
     # On récupère toutes les releases (car /latest est buggé)
-    $releases = Invoke-RestMethod "$RepoApi/releases"
+    $releases = Invoke-RestMethod "$RepoApi/releases" -Headers $headers
 } catch {
     Write-Host "Erreur : impossible de contacter GitHub."
     exit 1
@@ -51,7 +56,7 @@ if ($asset -eq $null) {
 
 # Téléchargement
 $zipPath = "$env:TEMP\QwenAgent.zip"
-Invoke-WebRequest $asset.browser_download_url -OutFile $zipPath
+Invoke-WebRequest $asset.browser_download_url -OutFile $zipPath -Headers $headers
 
 # 4. Extraire
 Write-Host "Extraction..."
