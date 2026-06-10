@@ -2,17 +2,19 @@ param(
     [string]$InstallDir = ""
 )
 
+Write-Host "Désinstallation de QwenAgent..."
+
+# Demander le dossier si non fourni
 if (-not $InstallDir) {
     $InstallDir = Read-Host "Chemin d'installation actuel de QwenAgent"
 }
 
-Write-Host "🗑 Désinstallation de QwenAgent..." -ForegroundColor Yellow
-
+# Supprimer le dossier
 if (Test-Path $InstallDir) {
     Remove-Item $InstallDir -Recurse -Force
-    Write-Host "✔ Dossier supprimé."
+    Write-Host "Dossier supprimé."
 } else {
-    Write-Host "ℹ Dossier introuvable."
+    Write-Host "Dossier introuvable."
 }
 
-Write-Host "⚠ Pense à retirer $InstallDir du PATH si nécessaire." -ForegroundColor Yellow
+Write-Host "Si nécessaire, retire manuellement le dossier du PATH."
