@@ -2,6 +2,9 @@ param(
     [string]$InstallDir = ""
 )
 
+# Forcer TLS 1.2 pour GitHub
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 Write-Host "Installation de QwenAgent..."
 
 # 1. Demander le dossier si non fourni
