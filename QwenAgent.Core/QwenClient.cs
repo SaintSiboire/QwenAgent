@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -17,11 +18,12 @@ namespace QwenAgent.Core
             _endpoint = "http://localhost:11434/api/chat";
         }
 
-        private async Task<string> SendToOllamaAsync(string model, string prompt)
+        private async Task StreamToConsoleAsync(string model, string prompt)
         {
             var payload = new
             {
                 model = model,
+                stream = true,
                 messages = new[]
                 {
                     new { role = "user", content = prompt }
@@ -29,22 +31,58 @@ namespace QwenAgent.Core
             };
 
             var json = JsonSerializer.Serialize(payload);
-            var response = await _http.PostAsync(
-                _endpoint,
-                new StringContent(json, Encoding.UTF8, "application/json")
-            );
+            var request = new StringContent(json, Encoding.UTF8, "application/json");
 
-            return await response.Content.ReadAsStringAsync();
+            // Pas de ResponseHeadersRead → compatible partout
+            using var response = await _http.PostAsync(_endpoint, request);
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream);
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("\n──────────────────────────────────────────────");
+            Console.WriteLine(" Réponse de Qwen");
+            Console.WriteLine("──────────────────────────────────────────────\n");
+            Console.ResetColor();
+
+            while (!reader.EndOfStream)
+            {
+                var line = await reader.ReadLineAsync();
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                try
+                {
+                    var jsonObj = JsonDocument.Parse(line);
+
+                    if (jsonObj.RootElement.TryGetProperty("message", out var msg))
+                    {
+                        if (msg.TryGetProperty("content", out var content))
+                        {
+                            Console.ForegroundColor = ConsoleColor.White;
+                            Console.Write(content.GetString());
+                            Console.ResetColor();
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore les fragments JSON incomplets
+                }
+            }
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("\n\n──────────────────────────────────────────────");
+            Console.WriteLine(" Fin de la réponse");
+            Console.WriteLine("──────────────────────────────────────────────\n");
+            Console.ResetColor();
         }
 
-        // MODE CHAT / ANALYSE / RESUME
-        public Task<string> SendChatAsync(string prompt)
+        public async Task<string> SendChatAsync(string prompt)
         {
-            return SendToOllamaAsync("qwen2.5:14b-instruct", prompt);
+            await StreamToConsoleAsync("qwen2.5:14b-instruct", prompt);
+            return "";
         }
 
-        // MODE DIFF
-        public Task<string> GetDiffAsync(string prompt, string projectContext, string azureContext)
+        public async Task<string> GetDiffAsync(string prompt, string projectContext, string azureContext)
         {
             var fullPrompt =
                 "Tu es un agent de génération de diff. " +
@@ -52,7 +90,8 @@ namespace QwenAgent.Core
                 "Instruction : " + prompt + "\n\n" +
                 "Contexte du projet : " + projectContext;
 
-            return SendToOllamaAsync("qwen2.5-coder:7b", fullPrompt);
+            await StreamToConsoleAsync("qwen2.5-coder:7b", fullPrompt);
+            return "";
         }
     }
 }
