@@ -1,79 +1,45 @@
-﻿using System.Diagnostics;
-using QwenAgent.Core;
-using Spectre.Console;
+﻿using QwenAgent.Core;
+using QwenAgent.Core.Modes;
 
 var argsList = args.ToList();
-var startDir = Environment.CurrentDirectory;
 
-// Commandes :
-// qwen-fix                 -> mode interactif
-// qwen-fix doctor          -> diagnostic
-// qwen-fix update          -> mise à jour
-// qwen-fix "prompt..."     -> prompt direct
-
-if (argsList.Count > 0 && argsList[0].Equals("doctor", StringComparison.OrdinalIgnoreCase))
+if (argsList.Count == 0)
 {
-    var projectRootDoctor = ProjectDetector.DetectProjectRoot(startDir);
-    var configDoctor = ConfigLoader.Load(projectRootDoctor);
-    AzureDetector.EnrichAzureConfig(configDoctor, projectRootDoctor);
-    Doctor.Run(projectRootDoctor, configDoctor);
+    HelpPrinter.Print();
     return;
 }
 
-if (argsList.Count > 0 && argsList[0].Equals("update", StringComparison.OrdinalIgnoreCase))
-{
-    var scriptPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "installer", "update.ps1");
-    if (!File.Exists(scriptPath))
-    {
-        AnsiConsole.MarkupLine("[red]update.ps1 introuvable. Vérifie le dossier installer/.[/]");
-        return;
-    }
+var prompt = string.Join(" ", argsList);
 
-    Process.Start(new ProcessStartInfo("powershell",
-        $"-ExecutionPolicy Bypass -File \"{scriptPath}\"")
-    {
-        UseShellExecute = true
-    });
+// Commande help
+if (prompt == "help" || prompt == "--help" || prompt == "-h")
+{
+    HelpPrinter.Print();
     return;
 }
 
-var projectRoot = ProjectDetector.DetectProjectRoot(startDir);
-var config = ConfigLoader.Load(projectRoot);
-AzureDetector.EnrichAzureConfig(config, projectRoot);
-
-string userPrompt;
-if (argsList.Count > 0)
+// Commande update
+if (prompt == "--update")
 {
-    userPrompt = string.Join(" ", argsList);
-}
-else
-{
-    userPrompt = AnsiConsole.Ask<string>("Décris le problème à diagnostiquer :");
-}
-
-AnsiConsole.MarkupLine("[cyan]Scan du projet...[/]");
-var projectContext = ProjectScanner.BuildContext(projectRoot, config.Project);
-
-AnsiConsole.MarkupLine("[cyan]Scan Azure...[/]");
-var azureContext = AzureScanner.BuildAzureContext(config.Azure);
-
-AnsiConsole.MarkupLine("[cyan]Appel à Qwen...[/]");
-var client = new QwenClient(config.Model);
-var diff = await client.GetDiffAsync(userPrompt, projectContext, azureContext);
-
-var preview = string.Join(Environment.NewLine, diff.Split('\n').Take(80));
-var azureSummary = string.IsNullOrWhiteSpace(config.Azure.AppName)
-    ? "Aucune config Azure fiable détectée."
-    : $"App: {config.Azure.AppName}, RG: {config.Azure.ResourceGroup}";
-
-var apply = TuiRunner.ConfirmApply(projectRoot, azureSummary, preview);
-
-if (!apply)
-{
-    AnsiConsole.MarkupLine("[red]Patch annulé.[/]");
+    var installPath = AppContext.BaseDirectory;
+    await Updater.RunUpdateAsync(installPath);
     return;
 }
 
-AnsiConsole.MarkupLine("[yellow]Application du patch via git apply...[/]");
-PatchEngine.ApplyWithGit(diff, projectRoot);
-AnsiConsole.MarkupLine("[green]Terminé.[/]");
+// Détection automatique du mode
+var modeName = ModeDetector.Detect(prompt);
+Console.WriteLine($"Mode détecté : {modeName}");
+
+var client = new QwenClient();
+var context = ProjectContext.Load(Environment.CurrentDirectory);
+
+IAgentMode mode = modeName switch
+{
+    "chat" => new ChatMode(client),
+    "analyse" => new AnalyseMode(client),
+    "resume" => new ResumeMode(client),
+    "refactor" => new RefactorMode(client),
+    _ => new DiffMode(client)
+};
+
+await mode.RunAsync(prompt, context);

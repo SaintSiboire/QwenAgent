@@ -5,38 +5,80 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http.Json;
 using QwenAgent.Core.Models;
+using System.Text.Json;
 
-namespace QwenAgent.Core;
-
-public class QwenClient
+namespace QwenAgent.Core
 {
-    private readonly HttpClient _http;
-    private readonly ModelConfig _model;
-
-    public QwenClient(ModelConfig model)
+    public class QwenClient
     {
-        _model = model;
-        _http = new HttpClient { BaseAddress = new Uri(model.BaseUrl) };
-    }
+        private readonly HttpClient _http;
+        private readonly string _endpoint;
 
-    public async Task<string> GetDiffAsync(string userPrompt, string projectContext, string azureContext)
-    {
-        var body = new
+        public QwenClient()
         {
-            model = _model.Name,
-            messages = new[]
-            {
-                new { role = "system", content = "Tu es un agent DevOps + Debug + CodeFix. Tu dois diagnostiquer, corréler code + Azure + logs, et renvoyer UNIQUEMENT un patch unifié (diff -u), sans explication autour." },
-                new { role = "user", content = $"{userPrompt}\n\n### CONTEXTE PROJET\n{projectContext}\n\n### CONTEXTE AZURE\n{azureContext}" }
-            },
-            stream = false
-        };
+            _http = new HttpClient();
 
-        var resp = await _http.PostAsJsonAsync("/api/chat", body);
-        resp.EnsureSuccessStatusCode();
-        var json = await resp.Content.ReadFromJsonAsync<dynamic>();
-        string content = json.message.content;
-        return content;
+            // IMPORTANT : mets ici ton vrai endpoint Qwen
+            _endpoint = "https://api-inference.qwen.ai/v1/chat/completions";
+        }
+
+        // MODE CHAT LIBRE
+        public async Task<string> SendChatAsync(string prompt)
+        {
+            var payload = new
+            {
+                model = "qwen2.5-coder",
+                input = prompt
+            };
+
+            var json = JsonSerializer.Serialize(payload);
+            var response = await _http.PostAsync(
+                _endpoint,
+                new StringContent(json, Encoding.UTF8, "application/json")
+            );
+
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        // MODE DIFF (TON MODE ACTUEL)
+        public async Task<string> GetDiffAsync(string prompt, string projectContext, string azureContext)
+        {
+            var payload = new
+            {
+                model = "qwen2.5-coder",
+                input = new
+                {
+                    instruction = prompt,
+                    project = projectContext,
+                    azure = azureContext
+                }
+            };
+
+            var json = JsonSerializer.Serialize(payload);
+            var response = await _http.PostAsync(
+                _endpoint,
+                new StringContent(json, Encoding.UTF8, "application/json")
+            );
+
+            var content = await response.Content.ReadAsStringAsync();
+
+            // On parse proprement
+            try
+            {
+                using var doc = JsonDocument.Parse(content);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("diff", out var diffProp))
+                    return diffProp.GetString();
+
+                // fallback : renvoyer tout le texte
+                return content;
+            }
+            catch
+            {
+                return content;
+            }
+        }
     }
 }
 
