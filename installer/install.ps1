@@ -16,13 +16,38 @@ if (-not (Test-Path $InstallDir)) {
     New-Item -ItemType Directory -Path $InstallDir | Out-Null
 }
 
-# 3. Télécharger la dernière release GitHub
-$Repo = "https://github.com/SaintSiboire/QwenAgent"
+# 3. Télécharger la dernière release GitHub (méthode robuste)
+$RepoApi = "https://api.github.com/repos/SaintSiboire/QwenAgent"
 Write-Host "Téléchargement de la dernière version..."
-$release = Invoke-RestMethod "$Repo/releases/latest"
-$asset = $release.assets | Where-Object { $_.name -like "*.zip" }
-$zipPath = "$env:TEMP\QwenAgent.zip"
 
+try {
+    # On récupère toutes les releases (car /latest est buggé)
+    $releases = Invoke-RestMethod "$RepoApi/releases"
+} catch {
+    Write-Host "Erreur : impossible de contacter GitHub."
+    exit 1
+}
+
+# On prend la première release stable (pas draft, pas prerelease)
+$release = $releases | Where-Object { -not $_.draft -and -not $_.prerelease } | Select-Object -First 1
+
+if ($release -eq $null) {
+    Write-Host "Erreur : aucune release stable trouvée."
+    exit 1
+}
+
+Write-Host "Version trouvée : $($release.tag_name)"
+
+# On récupère l'asset ZIP
+$asset = $release.assets | Where-Object { $_.name -like "*.zip" } | Select-Object -First 1
+
+if ($asset -eq $null) {
+    Write-Host "Erreur : aucun fichier ZIP trouvé dans la release."
+    exit 1
+}
+
+# Téléchargement
+$zipPath = "$env:TEMP\QwenAgent.zip"
 Invoke-WebRequest $asset.browser_download_url -OutFile $zipPath
 
 # 4. Extraire
