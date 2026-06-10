@@ -18,11 +18,11 @@ namespace QwenAgent.Core
             _endpoint = "http://localhost:11434/api/chat";
         }
 
-        private async Task StreamToConsoleAsync(string model, string prompt)
+        private async Task StreamToConsoleAsync(string prompt)
         {
             var payload = new
             {
-                model = model,
+                model = "qwen2.5-coder:7b",
                 stream = true,
                 messages = new[]
                 {
@@ -33,7 +33,6 @@ namespace QwenAgent.Core
             var json = JsonSerializer.Serialize(payload);
             var request = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // Pas de ResponseHeadersRead → compatible partout
             using var response = await _http.PostAsync(_endpoint, request);
             using var stream = await response.Content.ReadAsStreamAsync();
             using var reader = new StreamReader(stream);
@@ -65,7 +64,7 @@ namespace QwenAgent.Core
                 }
                 catch
                 {
-                    // Ignore les fragments JSON incomplets
+                    // Ignore fragments JSON incomplets
                 }
             }
 
@@ -76,21 +75,35 @@ namespace QwenAgent.Core
             Console.ResetColor();
         }
 
-        public async Task<string> SendChatAsync(string prompt)
+        public async Task<string> SendChatAsync(string prompt, string projectContext, string azureContext)
         {
-            await StreamToConsoleAsync("qwen2.5:14b-instruct", prompt);
+            var fullPrompt =
+                "Tu es un assistant expert en .NET, Azure, debugging et architecture.\n" +
+                "Analyse la question en tenant compte du contexte suivant.\n\n" +
+                "=== CONTEXTE DU PROJET ===\n" +
+                projectContext + "\n\n" +
+                "=== CONTEXTE AZURE ===\n" +
+                azureContext + "\n\n" +
+                "=== QUESTION ===\n" +
+                prompt;
+
+            await StreamToConsoleAsync(fullPrompt);
             return "";
         }
 
         public async Task<string> GetDiffAsync(string prompt, string projectContext, string azureContext)
         {
             var fullPrompt =
-                "Tu es un agent de génération de diff. " +
+                "Tu es un agent spécialisé en génération de patchs DIFF.\n" +
                 "Réponds UNIQUEMENT avec un patch diff valide.\n\n" +
-                "Instruction : " + prompt + "\n\n" +
-                "Contexte du projet : " + projectContext;
+                "=== CONTEXTE DU PROJET ===\n" +
+                projectContext + "\n\n" +
+                "=== CONTEXTE AZURE ===\n" +
+                azureContext + "\n\n" +
+                "=== INSTRUCTION ===\n" +
+                prompt;
 
-            await StreamToConsoleAsync("qwen2.5-coder:7b", fullPrompt);
+            await StreamToConsoleAsync(fullPrompt);
             return "";
         }
     }

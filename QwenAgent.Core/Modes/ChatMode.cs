@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace QwenAgent.Core.Modes
 {
@@ -17,8 +13,10 @@ namespace QwenAgent.Core.Modes
 
         public async Task RunAsync(string prompt, ProjectContext context)
         {
-            var response = await _client.SendChatAsync(prompt);
-            Console.WriteLine(response);
+            var project = context.GenerateSolutionOverview();
+            var azure = AzureDetector.DetectContext(context.RootPath);
+
+            await _client.SendChatAsync(prompt, project, azure);
         }
     }
 }

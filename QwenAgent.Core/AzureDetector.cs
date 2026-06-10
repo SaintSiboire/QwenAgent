@@ -41,6 +41,57 @@ public static class AzureDetector
             }
         }
     }
+
+    public static string DetectContext(string projectRoot)
+    {
+        if (!Directory.Exists(projectRoot))
+            return "Aucun contexte Azure détecté.";
+
+        var sb = new StringBuilder();
+
+        sb.AppendLine("=== Azure Context Detected ===");
+
+        // 1. appsettings.json
+        var appsettings = Directory.GetFiles(projectRoot, "appsettings*.json", SearchOption.AllDirectories);
+        if (appsettings.Length > 0)
+        {
+            sb.AppendLine("\nFichiers appsettings détectés :");
+            foreach (var file in appsettings)
+            {
+                sb.AppendLine($"- {file}");
+                sb.AppendLine(File.ReadAllText(file));
+            }
+        }
+
+        // 2. YAML (pipelines, infra)
+        var yamls = Directory.GetFiles(projectRoot, "*.yml", SearchOption.AllDirectories)
+            .Concat(Directory.GetFiles(projectRoot, "*.yaml", SearchOption.AllDirectories))
+            .ToList();
+
+        if (yamls.Count > 0)
+        {
+            sb.AppendLine("\nFichiers YAML Azure détectés :");
+            foreach (var file in yamls)
+            {
+                sb.AppendLine($"- {file}");
+                sb.AppendLine(File.ReadAllText(file));
+            }
+        }
+
+        // 3. Fichiers ARM/Bicep
+        var bicep = Directory.GetFiles(projectRoot, "*.bicep", SearchOption.AllDirectories);
+        if (bicep.Length > 0)
+        {
+            sb.AppendLine("\nFichiers Bicep détectés :");
+            foreach (var file in bicep)
+            {
+                sb.AppendLine($"- {file}");
+                sb.AppendLine(File.ReadAllText(file));
+            }
+        }
+
+        return sb.ToString();
+    }
 }
 
 

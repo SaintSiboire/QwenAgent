@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace QwenAgent.Core.Modes
 {
@@ -17,13 +13,13 @@ namespace QwenAgent.Core.Modes
 
         public async Task RunAsync(string prompt, ProjectContext context)
         {
-            var overview = context.GenerateSolutionOverview();
+            var project = context.ToJson();
+            var azure = AzureDetector.DetectContext(context.RootPath);
 
-            var diff = await _client.GetDiffAsync(
-                $"Refactorise ce projet selon les meilleures pratiques:\n{overview}",
-                context.ToJson(),
-                ""
-            );
+            var fullPrompt =
+                $"Refactorise ce projet selon les meilleures pratiques.\n\n{prompt}";
+
+            var diff = await _client.GetDiffAsync(fullPrompt, project, azure);
 
             DiffApplier.Apply(diff, context.RootPath);
         }
