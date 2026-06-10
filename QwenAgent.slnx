@@ -1,4 +1,16 @@
 <Solution>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/workflows/">
+    <File Path="release.yml" />
+  </Folder>
+  <Folder Name="/installer/">
+    <File Path="install.ps1" />
+    <File Path="uninstall.ps1" />
+    <File Path="update.ps1" />
+  </Folder>
+  <Folder Name="/Éléments de solution/">
+    <File Path="README.md" />
+  </Folder>
   <Project Path="QwenAgent.Cli/QwenAgent.Cli.csproj" />
   <Project Path="QwenAgent.Core/QwenAgent.Core.csproj" />
 </Solution>

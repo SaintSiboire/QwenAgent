@@ -29,7 +29,6 @@ public static class ConfigLoader
             dir = dir.Parent;
         }
 
-        // fallback
         return new QwenConfig
         {
             Project = new ProjectConfig
@@ -39,3 +38,4 @@ public static class ConfigLoader
         };
     }
 }
+

@@ -16,7 +16,6 @@ public static class AzureDetector
             !string.IsNullOrEmpty(config.Azure.ResourceGroup))
             return;
 
-        // appsettings*.json
         foreach (var file in Directory.GetFiles(projectRoot, "appsettings*.json", SearchOption.AllDirectories))
         {
             var content = File.ReadAllText(file);
@@ -29,7 +28,6 @@ public static class AzureDetector
             }
         }
 
-        // pipelines YAML
         foreach (var file in Directory.GetFiles(projectRoot, "*.yml", SearchOption.AllDirectories)
                      .Concat(Directory.GetFiles(projectRoot, "*.yaml", SearchOption.AllDirectories)))
         {
@@ -44,4 +42,5 @@ public static class AzureDetector
         }
     }
 }
+
 

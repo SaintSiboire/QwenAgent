@@ -22,10 +22,19 @@ public static class ProjectDetector
         }
         catch
         {
-            // ignore
+        }
+
+        var dir = new DirectoryInfo(startDirectory);
+        while (dir != null)
+        {
+            if (dir.GetFiles("*.sln").Any() || dir.GetFiles("*.csproj").Any())
+                return dir.FullName;
+
+            dir = dir.Parent;
         }
 
         return Path.GetFullPath(startDirectory);
     }
 }
+
 

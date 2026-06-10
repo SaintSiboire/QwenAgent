@@ -1,4 +1,5 @@
 ﻿namespace QwenAgent.Core.Models;
+
 public class QwenConfig
 {
     public AzureConfig Azure { get; set; } = new();
@@ -17,7 +18,7 @@ public class ProjectConfig
     public string Root { get; set; } = ".";
     public List<string> Ignore { get; set; } = new()
     {
-        "bin", "obj", "node_modules", ".git", "dist"
+        "bin", "obj", "node_modules", ".git", "dist", "wwwroot/lib"
     };
 }
 
