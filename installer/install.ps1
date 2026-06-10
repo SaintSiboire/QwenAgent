@@ -72,7 +72,10 @@ $l = "$InstallDir\qwen-fix.cmd"
 "$InstallDir\QwenAgent.Cli.exe" %*
 "@ | Set-Content $l
 
-# 7. Ajouter au PATH
+# 7. Écrire le chemin d'installation dans install_path.txt
+Set-Content -Path "$InstallDir\install_path.txt" -Value $InstallDir
+
+# 8. Ajouter au PATH
 Write-Host "Ajout au PATH..."
 $oldPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 if ($oldPath -notlike "*$InstallDir*") {

@@ -21,7 +21,22 @@ if (prompt == "help" || prompt == "--help" || prompt == "-h")
 // Commande update
 if (prompt == "--update")
 {
-    var installPath = AppContext.BaseDirectory;
+    // Détection automatique du dossier d'installation
+    var exeDir = AppContext.BaseDirectory;
+    var installPathFile = Path.Combine(exeDir, "install_path.txt");
+
+    string installPath;
+
+    if (File.Exists(installPathFile))
+    {
+        installPath = File.ReadAllText(installPathFile).Trim();
+    }
+    else
+    {
+        // Fallback : utiliser le dossier courant
+        installPath = exeDir;
+    }
+
     var updaterExe = Path.Combine(installPath, "QwenAgent.Updater.exe");
 
     Console.WriteLine("Lancement de l'updater externe...");
