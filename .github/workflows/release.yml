@@ -15,7 +15,7 @@ jobs:
       - name: Read version
         id: version
         run: |
-          $v = Get-Content src/QwenAgent.Cli/version.txt
+          $v = Get-Content QwenAgent.Cli/version.txt
           echo "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Create Tag
@@ -30,7 +30,7 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Publish
-        run: dotnet publish src/QwenAgent.Cli/QwenAgent.Cli.csproj -c Release -o publish
+        run: dotnet publish QwenAgent.Cli/QwenAgent.Cli.csproj -c Release -o publish
 
       - name: Zip
         run: Compress-Archive -Path publish/* -DestinationPath QwenAgent.zip
